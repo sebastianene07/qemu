@@ -22,6 +22,7 @@
 #define CODE_SIZE                   (0x20000000)
 
 #define NRF52_IRQ_NUM               (64)
+#define NRF52_HCLK_FRQ              (16000000)
 
 static void nrf52_soc_class_init(ObjectClass *oc, void *data);
 
@@ -75,10 +76,14 @@ static void nrf52_soc_init(MachineState *ms)
     qdev_prop_set_bit(armv7m, "enable-bitband", true);
     object_property_set_link(OBJECT(armv7m), "memory", OBJECT(get_system_memory()), &error_abort);
 
+    /* Add the reset interrupt */
+
     sysbus_realize_and_unref(SYS_BUS_DEVICE(armv7m), &error_fatal);
     qdev_connect_gpio_out_named(armv7m, "SYSRESETREQ", 0, qemu_allocate_irq(&nrf52_soc_do_sys_reset, NULL, 0));
 
-    system_clock_scale = 1;
+    /* Set the system CPU clock */
+
+    system_clock_scale = NANOSECONDS_PER_SECOND / NRF52_HCLK_FRQ;
 
     armv7m_load_kernel(ARM_CPU(first_cpu), ms->kernel_filename, CODE_SIZE);
 }
