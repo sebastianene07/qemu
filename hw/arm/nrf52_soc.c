@@ -11,6 +11,7 @@
 #include "hw/i2c/i2c.h"
 #include "hw/arm/armv7m.h"
 #include "hw/misc/unimp.h"
+#include "hw/char/nrf52_usart.h"
 
 #include "net/net.h"
 #include "exec/address-spaces.h"
@@ -23,6 +24,7 @@
 
 #define NRF52_IRQ_NUM               (64)
 #define NRF52_HCLK_FRQ              (16000000)
+#define NRF52_UART_PERIPHERAL       (2)
 
 static void nrf52_soc_class_init(ObjectClass *oc, void *data);
 
@@ -30,6 +32,16 @@ static const TypeInfo g_nrf52_soc_type = {
     .name       = MACHINE_TYPE_NAME("nrf52840"),
     .parent     = TYPE_MACHINE,
     .class_init = nrf52_soc_class_init,
+};
+
+static const uint32_t g_usart_addr[NRF52_UART_PERIPHERAL] =
+{
+    0x40002000, 0x40028000
+};
+
+static const uint32_t g_usart_irq[NRF52_UART_PERIPHERAL] =
+{
+    18, 56
 };
 
 static void nrf52_soc_do_sys_reset(void *opaque, int n, int level)
@@ -84,6 +96,17 @@ static void nrf52_soc_init(MachineState *ms)
     /* Set the system CPU clock */
 
     system_clock_scale = NANOSECONDS_PER_SECOND / NRF52_HCLK_FRQ;
+
+    /* Initialize the UART peripherals */
+
+    for (int i = 0; i < NRF52_UART_PERIPHERAL; i++) {
+        DeviceState *dev = qdev_new(TYPE_NRF52_USART);
+        qdev_prop_set_chr(dev, "chardev", serial_hd(0));
+        sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
+        SysBusDevice *busdev = SYS_BUS_DEVICE(dev);
+        sysbus_mmio_map(busdev, 0, g_usart_addr[i]);
+        sysbus_connect_irq(busdev, 0, qdev_get_gpio_in(armv7m, g_usart_irq[i]));
+    }
 
     armv7m_load_kernel(ARM_CPU(first_cpu), ms->kernel_filename, CODE_SIZE);
 }
