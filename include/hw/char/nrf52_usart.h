@@ -4,21 +4,24 @@
 #include "hw/sysbus.h"
 #include "chardev/char-fe.h"
 
+#ifndef NRF52_USART_DEBUG
+#define NRF52_USART_DEBUG 1
+#endif
+
 #define TYPE_NRF52_USART "nrf52-usart"
 #define NRF52_USART(obj) \
     OBJECT_CHECK(NRF52UsartState, (obj), TYPE_NRF52_USART)
 
 
-// TODO - fill this with correct values
-//
-#define USART_ISR_RESET         (0)
-#define USART_ISR_RXNE          (0)
-
 typedef struct {
-    uint32_t usart_isr;
-    qemu_irq irq;
+    SysBusDevice parent_obj;
     MemoryRegion mmio;
     CharBackend chr;
+
+    bool is_event_txrdy;
+    uint32_t usart_isr;
+    qemu_irq irq;
+
 } NRF52UsartState;
 
 #endif /* __NRF52_USART_H */

@@ -44,6 +44,11 @@ static const uint32_t g_usart_irq[NRF52_UART_PERIPHERAL] =
     18, 56
 };
 
+static const uint32_t g_usart_id[NRF52_UART_PERIPHERAL] =
+{
+    0, 1
+};
+
 static void nrf52_soc_do_sys_reset(void *opaque, int n, int level)
 {
     if (level) {
@@ -101,7 +106,7 @@ static void nrf52_soc_init(MachineState *ms)
 
     for (int i = 0; i < NRF52_UART_PERIPHERAL; i++) {
         DeviceState *dev = qdev_new(TYPE_NRF52_USART);
-        qdev_prop_set_chr(dev, "chardev", serial_hd(0));
+        qdev_prop_set_chr(dev, "chardev", serial_hd(g_usart_id[i]));
         sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
         SysBusDevice *busdev = SYS_BUS_DEVICE(dev);
         sysbus_mmio_map(busdev, 0, g_usart_addr[i]);
