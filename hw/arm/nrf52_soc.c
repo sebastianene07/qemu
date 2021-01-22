@@ -41,7 +41,7 @@ static const uint32_t g_usart_addr[NRF52_UART_PERIPHERAL] =
 
 static const uint32_t g_usart_irq[NRF52_UART_PERIPHERAL] =
 {
-    18, 56
+    2, 40
 };
 
 static const uint32_t g_usart_id[NRF52_UART_PERIPHERAL] =

@@ -18,6 +18,7 @@ typedef struct {
     MemoryRegion mmio;
     CharBackend chr;
 
+    uint8_t rx_data;
     bool is_event_txrdy;
     uint32_t usart_isr;
     qemu_irq irq;

@@ -97,12 +97,25 @@ static uint64_t nrf52_usart_read(void *opaque, hwaddr addr,
 {
     NRF52UsartState *s = opaque;
 
-//    DB_PRINT("Read 0x%"HWADDR_PRIx"\n", addr);
+    DB_PRINT("Read 0x%"HWADDR_PRIx"\n", addr);
 
     switch (addr)
     {
         case UARTE_EVENTS_TXDRDY:
             return s->is_event_txrdy;
+
+        case UARTE_EVENTS_RXDRDY:
+            return s->is_event_rxrdy;
+
+        case UARTE_RXD:
+            qemu_set_irq(s->irq, 0);
+            return s->rx_data;
+
+        case UARTE_EVENTS_RXTO:
+            return 0;
+
+        case UARTE_EVENTS_ERROR:
+            return 0;
     }
     return 0;
 }
@@ -127,7 +140,12 @@ static void nrf52_usart_write(void *opaque, hwaddr addr,
 
         case UARTE_EVENTS_TXDRDY:
             s->is_event_txrdy = (bool)value;
-            DB_PRINT("Disable TX RDY\n");
+            DB_PRINT("%s TX RDY\n", value == true ? "Enabled" : "Disabled");
+            break;
+
+        case UARTE_EVENTS_RXDRDY:
+            s->is_event_rxrdy = (bool)value;
+            DB_PRINT("%s RX RDY\n", value == true ? "Enabled" : "Disabled");
             break;
     }
 }
@@ -146,6 +164,13 @@ static int nrf52_usart_can_receive(void *opaque)
 
 static void nrf52_usart_receive(void *opaque, const uint8_t *buf, int size)
 {
+    NRF52UsartState *s = opaque;
+
+    s->rx_data   = *buf;
+    s->is_event_rxrdy = true;
+
+    qemu_set_irq(s->irq, 1);
+    DB_PRINT("Receiving: %c\n", s->rx_data);
 }
 
 static void nrf52_usart_realize(DeviceState *dev, Error **errp)
